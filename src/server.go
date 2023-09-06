@@ -11,6 +11,7 @@ import (
 var (
 	port int
 	baseUrl string
+	stats chan string
 )
 
 type Headers map[string]string
@@ -21,6 +22,9 @@ func init() {
 }
 
 func main() {
+	stats = make(chan string)
+	defer close(stats)
+	go registerStats(stats)
 	url.SetUpRepository(url.NewMemoryRepository())
 	http.HandleFunc("/api/short", Shortener)
 	http.HandleFunc("/r/", Redirector)
@@ -31,6 +35,7 @@ func Redirector(w http.ResponseWriter, r *http.Request) {
 	id := path[len(path)-1]
 	if url := url.Search(id); url != nil {
 		http.Redirect(w, r, url.Destination, http.StatusMovedPermanently)
+		stats <- id
 	} else {
 		http.NotFound(w, r)
 	}
@@ -71,4 +76,10 @@ func extractUrl(r *http.Request) string {
 	url := make([]byte, r.ContentLength, r.ContentLength)
 	r.Body.Read(url)
 	return string(url)
+}
+func registerStats(ids <-chan string) {
+	for id := range ids {
+		url.RegisterClick(id)
+		fmt.Printf("Click on %s registered successfuly\n", id)
+	}
 }

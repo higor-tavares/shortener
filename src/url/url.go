@@ -23,6 +23,7 @@ type Repository interface {
 	SearchById(id string) *Url
 	SearchByUrl(url string) *Url
 	Save(url Url) error
+	RegisterClick(id string)
 }
 
 func init() {
@@ -46,6 +47,10 @@ func Search(id string) *Url {
  
 func SetUpRepository(r Repository) {
 	repository = r
+}
+
+func RegisterClick(id string) {
+	repository.RegisterClick(id)
 }
 
 func generateID() string {

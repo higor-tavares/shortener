@@ -2,10 +2,14 @@ package url
 
 type memoryRepository struct {
 	urls map[string]*Url
+	clicks map[string]int
 }
 
 func NewMemoryRepository() *memoryRepository {
-	return &memoryRepository{make(map[string]*Url)}
+	return &memoryRepository{
+		make(map[string]*Url),
+		make(map[string]int),
+	}
 }
 
 func (r *memoryRepository) IdExists(id string) bool {
@@ -29,4 +33,8 @@ func (r *memoryRepository) SearchByUrl(url string) *Url {
 func (r *memoryRepository) Save(url Url) error {
 	r.urls[url.ID] = &url
 	return nil
+}
+
+func (r *memoryRepository) RegisterClick(id string) {
+	r.clicks[id] += 1
 }
