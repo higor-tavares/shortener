@@ -3,7 +3,6 @@ import (
 	"time"
 	"math/rand"
 	"net/url"
-	"fmt"
 )
 
 const (
