@@ -2,8 +2,7 @@ package url
 import (
 	"time"
 	"math/rand"
-	"net/url"
-)
+	"net/url")
 
 const (
 	size = 5
@@ -13,14 +12,14 @@ const (
 var repository Repository
 
 type Stats struct {
-	Url *Url `json: "url"`
-	Clicks int `json: "clicks"`
+	Url *Url `json:"url"`
+	Clicks int `json:"clicks"`
 }
 
 type Url struct {
-	ID string `json: "id"`
-	CreatedAt time.Time `json: "created_at"`
-	Destination string `json: "destination"`
+	ID string `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	Destination string `json:"destination"`
 }
 
 type Repository interface {
