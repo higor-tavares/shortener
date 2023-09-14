@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"github.com/higor-tavares/shortener/src/url"
+	"encoding/json"
 )
 
 var (
@@ -28,8 +29,24 @@ func main() {
 	url.SetUpRepository(url.NewMemoryRepository())
 	http.HandleFunc("/api/short", Shortener)
 	http.HandleFunc("/r/", Redirector)
+	http.HandleFunc("/api/stats/", Statistics)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
+func Statistics(w http.ResponseWriter, r *http.Request) {
+	path := strings.Split(r.URL.Path,"/")
+	id := path[len(path)-1]
+	if url := url.Search(id); url != nil {
+		json, err := json.Marshal(url.Stats())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		sendJson(w, string(json))
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
 func Redirector(w http.ResponseWriter, r *http.Request) {
 	path := strings.Split(r.URL.Path,"/")
 	id := path[len(path)-1]
@@ -40,6 +57,7 @@ func Redirector(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 	}
 }
+
 func Shortener(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		respondWith(w, http.StatusMethodNotAllowed, Headers{
@@ -59,7 +77,10 @@ func Shortener(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusOK
 	}
 	shortUrl := fmt.Sprintf("%s/r/%s", baseUrl, url.ID)
-	respondWith(w, status, Headers{"Location":shortUrl})
+	respondWith(w, status, Headers{
+		"Location":shortUrl,
+		"Link": fmt.Sprintf("<%s/api/stats/%s>;rel=\"stats\"", baseUrl, url.ID),
+	})
 }
 
 func respondWith(
@@ -82,4 +103,11 @@ func registerStats(ids <-chan string) {
 		url.RegisterClick(id)
 		fmt.Printf("Click on %s registered successfuly\n", id)
 	}
+}
+
+func sendJson(w http.ResponseWriter, resposta string) {
+    respondWith(w, http.StatusOK, Headers{
+        "Content-Type": "application/json",
+    })
+    fmt.Fprintf(w, resposta)
 }

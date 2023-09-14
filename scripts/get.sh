@@ -1,1 +1,1 @@
-curl -v localhost:9999/r/20lgD
+curl -v http://localhost:9999/r/MG0pr

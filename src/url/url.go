@@ -12,10 +12,15 @@ const (
 
 var repository Repository
 
+type Stats struct {
+	Url *Url `json: "url"`
+	Clicks int `json: "clicks"`
+}
+
 type Url struct {
-	ID string
-	CreatedAt time.Time
-	Destination string
+	ID string `json: "id"`
+	CreatedAt time.Time `json: "created_at"`
+	Destination string `json: "destination"`
 }
 
 type Repository interface {
@@ -24,6 +29,7 @@ type Repository interface {
 	SearchByUrl(url string) *Url
 	Save(url Url) error
 	RegisterClick(id string)
+	SearchClicks(id string) int
 }
 
 func init() {
@@ -51,6 +57,11 @@ func SetUpRepository(r Repository) {
 
 func RegisterClick(id string) {
 	repository.RegisterClick(id)
+}
+
+func (u *Url) Stats() *Stats {
+	clicks := repository.SearchClicks(u.ID)
+	return &Stats{u, clicks}
 }
 
 func generateID() string {
