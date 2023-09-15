@@ -31,6 +31,7 @@ func main() {
 	http.HandleFunc("/api/short", Shortener)
 	http.Handle("/r/", &Redirector{stats})
 	http.HandleFunc("/api/stats/", Statistics)
+	logMessage("Starting the server on port %d...", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 func Statistics(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +77,7 @@ func Shortener(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusOK
 	}
 	shortUrl := fmt.Sprintf("%s/r/%s", baseUrl, url.ID)
+	logMessage("URL: %s -> SHORT URL :%s.", url.Destination, shortUrl)
 	respondWith(w, status, Headers{
 		"Location":shortUrl,
 		"Link": fmt.Sprintf("<%s/api/stats/%s>;rel=\"stats\"", baseUrl, url.ID),
@@ -100,7 +102,7 @@ func extractUrl(r *http.Request) string {
 func registerStats(ids <-chan string) {
 	for id := range ids {
 		url.RegisterClick(id)
-		fmt.Printf("Click on %s registered successfuly\n", id)
+		logMessage("Click on %s registered successfuly!", id)
 	}
 }
 
@@ -122,4 +124,8 @@ func searchAndExec(
 		} else {
 			http.NotFound(w, r)
 		}
+}
+
+func logMessage(format string, values ...interface{}) {
+	log.Printf(fmt.Sprintf("%s\n",format), values...)
 }
