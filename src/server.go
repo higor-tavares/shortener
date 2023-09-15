@@ -7,10 +7,12 @@ import (
 	"strings"
 	"github.com/higor-tavares/shortener/src/url"
 	"encoding/json"
+	"flag"
 )
 
 var (
-	port int
+	port *int
+	logEnabled *bool
 	baseUrl string
 )
 
@@ -19,8 +21,10 @@ type Redirector struct {
 	stats chan string
 }
 func init() {
-	port = 9999
-	baseUrl = fmt.Sprintf("http://localhost:%d",port)
+	port = flag.Int("p",9999, "port")
+	logEnabled = flag.Bool("l", true, "log enabled/disabled")
+	flag.Parse()
+	baseUrl = fmt.Sprintf("http://localhost:%d", *port)
 }
 
 func main() {
@@ -31,8 +35,8 @@ func main() {
 	http.HandleFunc("/api/short", Shortener)
 	http.Handle("/r/", &Redirector{stats})
 	http.HandleFunc("/api/stats/", Statistics)
-	logMessage("Starting the server on port %d...", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	logMessage("Starting the server on port %d...", *port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
 func Statistics(w http.ResponseWriter, r *http.Request) {
 	searchAndExec(
@@ -127,5 +131,7 @@ func searchAndExec(
 }
 
 func logMessage(format string, values ...interface{}) {
-	log.Printf(fmt.Sprintf("%s\n",format), values...)
+	if *logEnabled { 
+		log.Printf(fmt.Sprintf("%s\n",format), values...)
+	}
 }

@@ -1,1 +1,1 @@
-curl -v localhost:9999/api/short -d "https://www.casadocodigo.com.br/"
+curl -v localhost:8585/api/short -d "https://www.casadocodigo.com.br/"
