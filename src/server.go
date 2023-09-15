@@ -12,50 +12,49 @@ import (
 var (
 	port int
 	baseUrl string
-	stats chan string
 )
 
 type Headers map[string]string
-
+type Redirector struct {
+	stats chan string
+}
 func init() {
 	port = 9999
 	baseUrl = fmt.Sprintf("http://localhost:%d",port)
 }
 
 func main() {
-	stats = make(chan string)
+	stats := make(chan string)
 	defer close(stats)
 	go registerStats(stats)
 	url.SetUpRepository(url.NewMemoryRepository())
 	http.HandleFunc("/api/short", Shortener)
-	http.HandleFunc("/r/", Redirector)
+	http.Handle("/r/", &Redirector{stats})
 	http.HandleFunc("/api/stats/", Statistics)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 func Statistics(w http.ResponseWriter, r *http.Request) {
-	path := strings.Split(r.URL.Path,"/")
-	id := path[len(path)-1]
-	if url := url.Search(id); url != nil {
-		json, err := json.Marshal(url.Stats())
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		sendJson(w, string(json))
-	} else {
-		http.NotFound(w, r)
-	}
+	searchAndExec(
+		w,
+		r,
+		func (url *url.Url) {
+			json, err := json.Marshal(url.Stats())
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			sendJson(w, string(json))
+	})
 }
 
-func Redirector(w http.ResponseWriter, r *http.Request) {
-	path := strings.Split(r.URL.Path,"/")
-	id := path[len(path)-1]
-	if url := url.Search(id); url != nil {
-		http.Redirect(w, r, url.Destination, http.StatusMovedPermanently)
-		stats <- id
-	} else {
-		http.NotFound(w, r)
-	}
+func (redirector *Redirector) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	searchAndExec(
+		w, 
+		r,
+		func (url *url.Url) {
+			http.Redirect(w, r, url.Destination, http.StatusMovedPermanently)
+			redirector.stats <- url.ID
+	})
 }
 
 func Shortener(w http.ResponseWriter, r *http.Request) {
@@ -110,4 +109,17 @@ func sendJson(w http.ResponseWriter, resposta string) {
         "Content-Type": "application/json",
     })
     fmt.Fprintf(w, resposta)
+}
+
+func searchAndExec(
+	w http.ResponseWriter, 
+	r *http.Request,
+	exec func(*url.Url)) {
+		path := strings.Split(r.URL.Path,"/")
+		id := path[len(path)-1]
+		if url := url.Search(id); url != nil {
+			exec(url)
+		} else {
+			http.NotFound(w, r)
+		}
 }
