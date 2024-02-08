@@ -8,6 +8,8 @@ import (
 	"github.com/higor-tavares/shortener/src/url"
 	"encoding/json"
 	"flag"
+    "github.com/grafana/pyroscope-go"
+	"os"
 )
 
 var (
@@ -28,6 +30,23 @@ func init() {
 }
 
 func main() {
+	
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "shortener",
+		ServerAddress:   "http://localhost:4040",
+		Logger:          pyroscope.StandardLogger,
+		Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
+	
+		ProfileTypes: []pyroscope.ProfileType{
+		  pyroscope.ProfileCPU,
+		  pyroscope.ProfileAllocObjects,
+		  pyroscope.ProfileAllocSpace,
+		  pyroscope.ProfileInuseObjects,
+		  pyroscope.ProfileInuseSpace,
+		  pyroscope.ProfileGoroutines,
+		},
+	})
+
 	stats := make(chan string)
 	defer close(stats)
 	go registerStats(stats)
